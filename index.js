@@ -1,4 +1,4 @@
-const FALLBACK = '/img/ai4.png';
+const FALLBACK = '/img/logo.png';
 
 function isAstraTarget(img) {
     if (!(img instanceof HTMLImageElement)) return false;
@@ -7,31 +7,33 @@ function isAstraTarget(img) {
     if (img.matches('.astra-chat-top-bar__avatar')) return true;
     if (img.closest('.astra-chat-top-bar__avatar-frame')) return true;
 
-    // Astra Home / current persona area.
-    // Keep this intentionally scoped to Astra containers and avoid Recent Chats/message avatars.
-    const cls = `${img.className || ''}`.toLowerCase();
-    const parentText = `${img.parentElement?.className || ''}`.toLowerCase();
-    const ancestry = [];
-    let el = img.parentElement;
-    for (let i = 0; i < 5 && el; i++, el = el.parentElement) {
-        ancestry.push(`${el.className || ''}`.toLowerCase());
+    // Astra Home/current persona area, while avoiding recent-chat/message avatars.
+    const parts = [];
+    let el = img;
+    for (let i = 0; i < 6 && el; i++, el = el.parentElement) {
+        parts.push(`${el.className || ''}`.toLowerCase());
+        if (el.id) parts.push(`#${el.id.toLowerCase()}`);
     }
-    const chain = ancestry.join(' ');
+    const chain = parts.join(' ');
 
-    const looksAstra = cls.includes('astra') || parentText.includes('astra') || chain.includes('astra');
+    const looksAstra = chain.includes('astra');
     const looksHomeOrPersona =
-        cls.includes('persona') || cls.includes('current') || cls.includes('avatar') ||
-        parentText.includes('persona') || parentText.includes('current') || parentText.includes('avatar') ||
-        chain.includes('persona') || chain.includes('current-user') || chain.includes('home');
+        chain.includes('persona') ||
+        chain.includes('current') ||
+        chain.includes('avatar') ||
+        chain.includes('home');
 
-    const inRecentChats =
-        chain.includes('recent-chat') || chain.includes('recent_chats') ||
-        chain.includes('message') || chain.includes('mes_avatar');
+    const excluded =
+        chain.includes('recent-chat') ||
+        chain.includes('recent_chats') ||
+        chain.includes('mes_avatar') ||
+        chain.includes('message-avatar') ||
+        chain.includes('chat-message');
 
-    return looksAstra && looksHomeOrPersona && !inRecentChats;
+    return looksAstra && looksHomeOrPersona && !excluded;
 }
 
-function setFallback(img) {
+function applyFallback(img) {
     if (!img || img.dataset.astraLukerFallbackApplied === '1') return;
     img.dataset.astraLukerFallbackApplied = '1';
     img.src = FALLBACK;
@@ -44,14 +46,14 @@ function prepare(img) {
     img.dataset.astraLukerAvatarFixBound = '1';
 
     img.addEventListener('error', () => {
-        if (!img.src.endsWith('/img/ai4.png')) {
-            setFallback(img);
+        if (!img.src.endsWith('/img/logo.png')) {
+            applyFallback(img);
         }
     });
 
-    // Already failed before listener was attached.
-    if (img.complete && img.naturalWidth === 0 && !img.src.endsWith('/img/ai4.png')) {
-        setFallback(img);
+    // Already failed before our listener attached.
+    if (img.complete && img.naturalWidth === 0 && !img.src.endsWith('/img/logo.png')) {
+        applyFallback(img);
     }
 }
 
@@ -76,10 +78,10 @@ function start() {
 
     observer.observe(document.documentElement, {
         childList: true,
-        subtree: true
+        subtree: true,
     });
 
-    console.info('[Astra Luker Avatar Fix] loaded');
+    console.info('[Astra Luker Avatar Fix] v1.1 loaded; fallback=/img/logo.png');
 }
 
 if (document.readyState === 'loading') {
