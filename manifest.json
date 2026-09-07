@@ -1,0 +1,9 @@
+{
+  "display_name": "Astra Luker Avatar Fix",
+  "loading_order": 100,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "author": "local",
+  "version": "1.0.0"
+}
